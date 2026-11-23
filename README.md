@@ -3,7 +3,7 @@
 Mini-ORM em **PHP puro + PDO** (sem ORM de terceiros) para a biblioteca da universidade.
 Mapeia `Livro` e `Autor` para MySQL mantendo o **domínio separado da infraestrutura**.
 Projeto avaliativo de Programação II.
-Aluna: Kauanny Ribeirop da Silva
+Aluna: Kauanny Ribeiro da Silva
 
 ## Requisitos
 
