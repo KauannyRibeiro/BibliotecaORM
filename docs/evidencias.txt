@@ -1,0 +1,81 @@
+
+==========================================================================
+1. Cadastro de Autor e Livro (ids gerados pelo MySQL)
+==========================================================================
+  Antes do INSERT: id do autor 1 = NULL
+  Depois: Autor#12 "Machado de Assis" (Brasileira)
+  Depois: Autor#13 "Clarice Lispector" (Brasileira)
+  Antes do INSERT: id do livro = NULL
+  Depois: Livro#14 "Dom Casmurro" (ISBN 9780000000001, 1899)
+
+==========================================================================
+2. Busca por ID e reconstrução das propriedades (hidratação)
+==========================================================================
+  Classe ........: BibliotecaORM\Domain\Livro
+  id ............: 14 [int]
+  titulo ........: 'Dom Casmurro' [string]
+  isbn ..........: '9780000000001' [string]
+  anoPublicacao .: 1899 [int]
+  Mesmo id, objeto novo (nova instância): true
+  buscar(id inexistente) => NULL
+
+==========================================================================
+3. Atualização e nova consulta
+==========================================================================
+  Relido do banco: Livro#14 "Dom Casmurro (edição revista)" (ISBN 9780000000001, 1900)
+
+==========================================================================
+4. Relacionamento N:N — dois autores em um livro + coleção recuperada
+==========================================================================
+  Autores na memória (após adicionar $a1 duas vezes): 2
+  Autores recuperados de "Dom Casmurro (edição revista)":
+    - Autor#12 "Machado de Assis" (Brasileira)
+    - Autor#13 "Clarice Lispector" (Brasileira)
+  Autor #12 aparece em 2 livros no mesmo listar(); instâncias distintas: 1 (esperado: 1 — sem duplicação)
+
+==========================================================================
+5. Polimorfismo — o MESMO método com os dois repositórios
+==========================================================================
+  Repositório recebido: LivroRepository
+  salvar()  => Livro#16 "Livro Polimórfico" (ISBN 9780000000003, 2020)
+  buscar()  => Livro#16 "Livro Polimórfico" (ISBN 9780000000003, 2020)
+  listar()  => 5 registro(s) na tabela
+  excluir() => true
+  buscar() após excluir => NULL
+
+  Repositório recebido: AutorRepository
+  salvar()  => Autor#14 "Autor Polimórfico" (Qualquer)
+  buscar()  => Autor#14 "Autor Polimórfico" (Qualquer)
+  listar()  => 6 registro(s) na tabela
+  excluir() => true
+  buscar() após excluir => NULL
+
+==========================================================================
+6. Erro intencional dentro da transação => ROLLBACK
+==========================================================================
+  Livros antes: 4
+  Salvando livro + vínculo com autor inexistente (INSERT do livro ocorre ANTES do vínculo)...
+  Exceção capturada: PDOException SQLSTATE 23000
+  Mensagem: SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a child row: a foreign key constraint fails (`biblioteca_orm`.`livros_autores`, CONSTRAINT `fk_la_autor` FOREIGN KEY (`autor_id`) REFERENCES `autores` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE)
+  Livros depois: 4 (esperado: 4)
+  Livro existe no banco? false (esperado: false)
+  id do objeto após rollback: NULL (revertido para null)
+  Há transação aberta? false
+
+==========================================================================
+7. Exclusão controlada e restrições de chave estrangeira
+==========================================================================
+  Tentando excluir o Autor #12 enquanto vinculado a livros...
+  Bloqueado pela FK (ON DELETE RESTRICT) — SQLSTATE 23000
+  Mensagem: SQLSTATE[23000]: Integrity constraint violation: 1451 Cannot delete or update a parent row: a foreign key constraint fails (`biblioteca_orm`.`livros_autores`, CONSTRAINT `fk_la_autor` FOREIGN KEY (`autor_id`) REFERENCES `autores` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE)
+  Autor continua existindo? true
+  Excluindo os livros (o repositório remove os vínculos e depois o livro, em transação):
+  excluir(livro 1) => true
+  excluir(livro 2) => true
+  Agora sem vínculos, os autores podem ser excluídos:
+  excluir(autor 1) => true
+  excluir(autor 2) => true
+
+==========================================================================
+Demonstração concluída.
+==========================================================================
